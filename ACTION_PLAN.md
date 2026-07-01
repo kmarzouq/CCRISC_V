@@ -20,11 +20,16 @@ RISC-V Unprivileged ISA spec), plus a complete verification flow that:
   loads/stores) are implemented per the spec's semantics, including correct
   sign-extension, `x0` hard-wired to zero, and byte/half/word memory access
   with proper alignment behavior.
-- **No privileged spec / CSRs**: There is only machine-implicit user
-  execution — no interrupts, no traps, no CSR file. `ECALL`/`EBREAK`/`FENCE`
-  decode cleanly but are architectural no-ops. This is a deliberate,
-  documented simplification (many "minimal" educational cores make the same
-  call); it does not affect running/verifying ordinary RV32I programs.
+- **No privileged spec / CSRs**: CSR instructions are not part of base
+  RV32I — they belong to the separate **Zicsr** extension — so omitting
+  them is still a legitimate "base ISA only" core, not a shortcut around a
+  mandatory requirement. There is only machine-implicit user execution — no
+  interrupts, no traps, no CSR file. `ECALL`/`EBREAK`/`FENCE` decode cleanly
+  but are architectural no-ops. The tradeoff: the official
+  `riscv-tests`/`riscv-arch-test` suites assume Zicsr + machine-mode CSRs
+  (`mtvec`/`mepc`/`mcause`) for trap setup and pass/fail signalling, so they
+  can't run here unmodified — this is exactly why the verification flow
+  below uses a custom `tohost` MMIO convention instead, which needs no CSRs.
 - **Harvard-style memory**: separate instruction and data memories, both
   simulation models loaded from the *same* program image at boot. This means
   self-modifying code is not supported, but every ordinary program (its

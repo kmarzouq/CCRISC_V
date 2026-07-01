@@ -8,6 +8,14 @@ compiles and runs *real* RISC-V assembly and C programs.
 See [ACTION_PLAN.md](ACTION_PLAN.md) for the design rationale and scope
 decisions.
 
+> **Provenance note:** this core was vibe-coded — designed and implemented
+> end-to-end in a single conversational session with Claude, including the
+> RTL, the Verilator/toolchain flow, and the test programs. It was iterated
+> against real `riscv32-unknown-elf-gcc` + Verilator runs until all tests
+> passed and `verilator --lint-only` was clean, but it has not had an
+> independent human RTL review — treat it as a working reference design to
+> read and verify further, not a signed-off verified core.
+
 ## Pipeline diagram
 
 ```
@@ -131,8 +139,17 @@ Each `make test` prints `PASS` or `FAIL <code>` and exits with that code, so
 
 ## Known limitations (by design)
 
-- No CSR file, no traps/interrupts, no privileged modes — `ECALL`/`EBREAK`/
-  `FENCE` decode but are architectural no-ops.
+- **No CSRs, no traps/interrupts, no privileged modes.** This is a smaller
+  scope claim than it sounds: CSR instructions (`CSRRW`/`CSRRS`/...) are not
+  part of base RV32I at all — they belong to the separate **Zicsr**
+  extension, which this core does not implement. So "minimum spec" here
+  means the mandatory *base integer ISA*, not the full environment assumed
+  by the official `riscv-tests`/`riscv-arch-test` suites, which do rely on
+  Zicsr + machine-mode CSRs (`mtvec`, `mepc`, `mcause`, `mstatus`) for their
+  trap setup and pass/fail signalling. That's precisely why this repo uses
+  its own `tohost` MMIO convention (above) instead of running those suites
+  unmodified — it gets equivalent self-checking without needing Zicsr.
+  `ECALL`/`EBREAK`/`FENCE` decode cleanly but are architectural no-ops.
 - No M/A/F/D/C extensions — RV32I only.
 - Instruction and data memories are separate simulation models both
   initialized from the same image — no self-modifying code.
