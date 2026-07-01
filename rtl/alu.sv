@@ -1,0 +1,31 @@
+import riscv_pkg::*;
+
+// Combinational ALU. Also used to compute load/store addresses and
+// branch/jump targets (operand A = PC in those cases).
+module alu (
+    input  alu_op_e     op,
+    input  logic [31:0] a,
+    input  logic [31:0] b,
+    output logic [31:0] result
+);
+
+  logic [4:0] shamt;
+  assign shamt = b[4:0];
+
+  always_comb begin
+    unique case (op)
+      ALU_ADD : result = a + b;
+      ALU_SUB : result = a - b;
+      ALU_SLL : result = a << shamt;
+      ALU_SLT : result = {31'd0, ($signed(a) < $signed(b))};
+      ALU_SLTU: result = {31'd0, (a < b)};
+      ALU_XOR : result = a ^ b;
+      ALU_SRL : result = a >> shamt;
+      ALU_SRA : result = $signed(a) >>> shamt;
+      ALU_OR  : result = a | b;
+      ALU_AND : result = a & b;
+      default : result = 32'd0;
+    endcase
+  end
+
+endmodule : alu
